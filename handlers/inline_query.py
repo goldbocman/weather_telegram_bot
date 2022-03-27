@@ -14,9 +14,8 @@ from tools.geocode import get_coords
 async def inline(query: InlineQuery):
     town = query.query
     coords = get_coords(town)
-    req = requests.get(f'https://api.weather.yandex.ru/v2/informers?lat={coords[1]}&lon={coords[0]}&lang=ru_RU',
+    req = requests.get(f'https://api.weather.yandex.ru/v2/forecast?lat={coords[1]}&lon={coords[0]}&lang=ru_RU',
                      headers={'X-Yandex-API-Key': WEATHER_TOKEN}).content
-    print(req)
     response = json.loads(req)
     temp_now = response['fact']['temp']
     feels_like = response['fact']['feels_like']
@@ -25,7 +24,7 @@ async def inline(query: InlineQuery):
     pressure = response['fact']['pressure_mm']
     humidity = response['fact']['humidity']
     wind_gust = response['fact']['wind_gust']
-    forecast = response['forecast']['date']
+    forecast = response['forecasts'][0]['date']
     r_sum = InlineQueryResultArticle(
         id='1', title="Погода",
         # Описание отображается в подсказке,

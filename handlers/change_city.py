@@ -14,7 +14,7 @@ class FSMCity(StatesGroup):
     city = State()
 
 
-@dp.message_handler(commands='set_city', state=None)
+@dp.message_handler(text='\U0001F3D9 Сменить город', state=None)
 async def cm_start(message: types.Message):
     await FSMCity.city.set()
     await message.reply('Напишите название города')
