@@ -8,7 +8,7 @@ from forms.user import User
 from data import db_session
 from tools.geocode import get_coords
 
-from config import WEATHER_TOKEN
+from config import WEATHER_TOKEN, GET_WEATHER_MESSAGE
 from loader import dp, bot
 from keyboards import start_keyboard
 
@@ -31,15 +31,15 @@ async def get_weather(message: types.Message):
         humidity = response['fact']['humidity']
         wind_gust = response['fact']['wind_gust']
         forecast = response['forecasts'][0]['date']
-        await bot.send_message(message.from_user.id,
-                                  f"Прогноз для города {town}"
-                                  f" на {forecast}:\n"
-                                  f"<b>Температура:</b> {temp_now}°C\n"
-                                  f"Ощущается как {feels_like}°C\n"
-                                  f"<b>Давление:</b> {pressure} мм.рт.ст.\n"
-                                  f"<b>Влажность:</b> {humidity}%\n"
-                                  f"<b>Ветер:</b> {wind_speed} м/c\n"
-                                  f"Порывы ветра до {wind_gust} м/c\n", parse_mode=ParseMode.HTML)
+        text_message = GET_WEATHER_MESSAGE.replace('%town%', str(town))
+        text_message = text_message.replace('%forecast%', str(forecast))
+        text_message = text_message.replace('%temp_now%', str(temp_now))
+        text_message = text_message.replace('%feels_like%', str(feels_like))
+        text_message = text_message.replace('%pressure%', str(pressure))
+        text_message = text_message.replace('%humidity%', str(humidity))
+        text_message = text_message.replace('%wind_speed%', str(wind_speed))
+        text_message = text_message.replace('%wind_gust%', str(wind_gust))
+        await bot.send_message(message.from_user.id, text_message)
         user.requestsam += 1
         session.commit()
         session.close()
