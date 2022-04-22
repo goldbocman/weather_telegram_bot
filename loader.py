@@ -11,5 +11,4 @@ from config import TOKEN
 storage = MemoryStorage()
 bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot, storage=storage)
-db_session.global_init('db/user.sqlite')
 scheduler = AsyncIOScheduler()

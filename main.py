@@ -1,4 +1,6 @@
 import logging
+from pprint import pprint
+
 from aiogram import types
 
 from aiogram.dispatcher import Dispatcher
@@ -7,7 +9,7 @@ from aiogram.utils import executor
 from loader import dp, scheduler
 from config import ADMINS
 from data import db_session
-from forms.weathernotifications import WeatherNotifications
+from forms.weather import WeatherNotifications
 import handlers
 import asyncio
 
@@ -31,6 +33,7 @@ async def set_default_commands(dp):
 
 
 async def on_startup(dispatcher):
+    await process_send_weather_notifications()
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)
 
@@ -41,12 +44,14 @@ async def on_startup(dispatcher):
 async def process_send_weather_notifications():
     session = db_session.create_session()
     all_users = session.query(WeatherNotifications).all()
-    print(all_users)
+    pprint(all_users)
+    # await dp.bot.send_message(ADMINS[0], all_users)
 
 
 # scheduler.add_job(process_send_weather_notifications, 'interval', minutes=5)
 
 
 if __name__ == '__main__':
+    db_session.global_init('db/user.sqlite')
     scheduler.start()
     executor.start_polling(dp, on_startup=on_startup)

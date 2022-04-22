@@ -5,3 +5,7 @@ from . import get_weather
 from . import inline_query
 from . import profile
 from . import weather_notifications_handler
+from . import get_notifications_menu
+from . import switch_notifications
+from . import change_notification_type
+from . import change_notification_period

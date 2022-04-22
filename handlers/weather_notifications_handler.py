@@ -3,9 +3,10 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram.types import ChatType
 from forms.user import User
-from forms.weathernotifications import WeatherNotifications
+from forms.weather import WeatherNotifications
 from data import db_session
 
+from tools.get_user_notifications import get_user_notifications
 from loader import dp, bot
 from keyboards import start_keyboard
 
@@ -28,12 +29,3 @@ async def start_notification(message: types.Message):
     await bot.send_message(
         message.from_user.id,
         f"Вам теперь будет отправлятся рассылка погоды города <b>{town}</b> каждые <b>{hours}</b>ч.")
-
-
-async def get_user_notifications(message_user_id: int, session):
-    if session.query(WeatherNotifications).filter(message_user_id == WeatherNotifications.user_id).first() is None:
-        user_notifications = WeatherNotifications()
-        user_notifications.user_id = message_user_id
-    else:
-        user_notifications = session.query(WeatherNotifications).filter(message_user_id == WeatherNotifications.user_id).first()
-    return user_notifications
