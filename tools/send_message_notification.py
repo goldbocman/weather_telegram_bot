@@ -3,65 +3,25 @@ import json
 import os
 import random
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from config import WEATHER_CONDITIONS_URLS
-import requests as requests
+import requests
+from PIL import Image, ImageFont, ImageDraw
 from aiogram import types
-from aiogram.dispatcher.filters.builtin import Text
-from aiogram.types import ChatType, ParseMode, InputFile
-from forms.user import User
-from data import db_session
-from tools.geocode import get_coords
-from pprint import pprint
+from aiogram.types import ParseMode, InputFile
 
-from config import WEATHER_TOKEN, GET_WEATHER_MESSAGE, WEATHER_SHORTCUTS
-from loader import dp, bot
-from keyboards import start_keyboard
+from config import WEATHER_TOKEN, WEATHER_CONDITIONS_URLS, WEATHER_SHORTCUTS, GET_WEATHER_MESSAGE
+from data import db_session
+from forms.user import User
+from loader import bot
+from tools.geocode import get_coords
 
 
 WINDOW_SIZE = (860, 400)
 
 
-@dp.message_handler(text='\U0001F326 Узнать погоду')
-async def get_weather(message: types.Message):
-    try:
+async def send_message_notification(user_id: int, type_notification: int):
+    if type_notification == 1:
         session = db_session.create_session()
-        user = session.query(User).filter(message.from_user.id == User.chat_id).first()
-        town = user.town
-        if town is None:
-            raise ValueError
-        coords = get_coords(town)
-        response = json.loads(requests.get(f'https://api.weather.yandex.ru/v1/forecast?lat={coords[1]}&lon={coords[0]}&lang=ru_RU&limit=7', headers={'X-Yandex-API-Key': WEATHER_TOKEN}).content)
-        temp_now = response['fact']['temp']
-        feels_like = response['fact']['feels_like']
-        sky = response['fact']['condition']
-        wind_speed = response['fact']['wind_speed']
-        pressure = response['fact']['pressure_mm']
-        humidity = response['fact']['humidity']
-        wind_gust = response['fact']['wind_gust']
-        forecast = response['forecasts'][0]['date']
-
-        text_message = GET_WEATHER_MESSAGE.replace('%town%', str(town))
-        text_message = text_message.replace('%forecast%', str(forecast))
-        text_message = text_message.replace('%temp_now%', str(temp_now))
-        text_message = text_message.replace('%feels_like%', str(feels_like))
-        text_message = text_message.replace('%pressure%', str(pressure))
-        text_message = text_message.replace('%humidity%', str(humidity))
-        text_message = text_message.replace('%wind_speed%', str(wind_speed))
-        text_message = text_message.replace('%wind_gust%', str(wind_gust))
-        await bot.send_message(message.from_user.id, text_message)
-        user.requestsam += 1
-        session.commit()
-        session.close()
-    except ValueError:
-        await bot.send_message(message.from_user.id, 'Сперва вам нужно вызвать команду /set_city, чтобы мы знали, какой город вам нужен =)')
-
-
-@dp.message_handler(text='\U0001F326 Красивая погода')
-async def get_weather_2(message: types.Message):
-    try:
-        session = db_session.create_session()
-        user = session.query(User).filter(message.from_user.id == User.chat_id).first()
+        user = session.query(User).filter(user_id == User.chat_id).first()
         town = user.town
         if town is None:
             raise ValueError
@@ -70,7 +30,7 @@ async def get_weather_2(message: types.Message):
             f'https://api.weather.yandex.ru/v1/forecast?lat={coords[1]}&lon={coords[0]}&lang=ru_RU&limit=7',
             headers={'X-Yandex-API-Key': WEATHER_TOKEN}).content)
         file_to_send_id = 'AgACAgIAAxkDAAICXWJQbsx2_m92oEuaFinehsIjFvQyAAIeuzEbW-OASqiHJXIDPw69AQADAgADeQADIwQ'
-        sec_message = await bot.send_photo(message.from_user.id, photo=file_to_send_id, caption='<b>Секундочку...</b>',
+        sec_message = await bot.send_photo(user_id, photo=file_to_send_id, caption='<b>Секундочку...</b>',
                                            parse_mode=ParseMode.HTML)
 
         im = Image.new('RGBA', WINDOW_SIZE, color=('white'))  # #202124
@@ -182,9 +142,37 @@ async def get_weather_2(message: types.Message):
         user.requestsam += 1
         session.commit()
         session.close()
-    except ValueError:
-        await bot.send_message(message.from_user.id,
-                               'Сперва вам нужно вызвать команду /set_city, чтобы мы знали, какой город вам нужен =)')
+    else:
+        session = db_session.create_session()
+        user = session.query(User).filter(user_id == User.chat_id).first()
+        town = user.town
+        if town is None:
+            raise ValueError
+        coords = get_coords(town)
+        response = json.loads(requests.get(
+            f'https://api.weather.yandex.ru/v1/forecast?lat={coords[1]}&lon={coords[0]}&lang=ru_RU&limit=7',
+            headers={'X-Yandex-API-Key': WEATHER_TOKEN}).content)
+        temp_now = response['fact']['temp']
+        feels_like = response['fact']['feels_like']
+        sky = response['fact']['condition']
+        wind_speed = response['fact']['wind_speed']
+        pressure = response['fact']['pressure_mm']
+        humidity = response['fact']['humidity']
+        wind_gust = response['fact']['wind_gust']
+        forecast = response['forecasts'][0]['date']
+
+        text_message = GET_WEATHER_MESSAGE.replace('%town%', str(town))
+        text_message = text_message.replace('%forecast%', str(forecast))
+        text_message = text_message.replace('%temp_now%', str(temp_now))
+        text_message = text_message.replace('%feels_like%', str(feels_like))
+        text_message = text_message.replace('%pressure%', str(pressure))
+        text_message = text_message.replace('%humidity%', str(humidity))
+        text_message = text_message.replace('%wind_speed%', str(wind_speed))
+        text_message = text_message.replace('%wind_gust%', str(wind_gust))
+        await bot.send_message(user-id, text_message)
+        user.requestsam += 1
+        session.commit()
+        session.close()
 
 
 def interpolate(f_co, t_co, interval):

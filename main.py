@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 
 from aiogram import types
 
@@ -12,6 +11,8 @@ from data import db_session
 from forms.weather import WeatherNotifications
 import handlers
 import asyncio
+
+from tools.send_message_notification import send_message_notification
 
 
 async def on_startup_notify(dp: Dispatcher):
@@ -43,12 +44,20 @@ async def on_startup(dispatcher):
 
 async def process_send_weather_notifications():
     session = db_session.create_session()
-    all_users = session.query(WeatherNotifications).all()
-    pprint(all_users)
-    # await dp.bot.send_message(ADMINS[0], all_users)
+    all_users = session.query(WeatherNotifications).filter(WeatherNotifications.is_enable == 1).all()
+    ok_sent = 0
+    for user in all_users:
+        user.hours_remain -= 1
+        if user.hours_remain == 0:
+            asyncio.create_task(send_message_notification(user_id=user.user_id, type_notification=user.ntype))
+            ok_sent += 1
+            user.hours_remain = user.period
+        session.commit()
+        if ok_sent % 15 == 0:
+            await asyncio.sleep(1)
 
 
-# scheduler.add_job(process_send_weather_notifications, 'interval', minutes=5)
+scheduler.add_job(process_send_weather_notifications, 'cron', hour='0-23')
 
 
 if __name__ == '__main__':

@@ -26,6 +26,11 @@ async def switch_notifications_handler(call: types.CallbackQuery):
         await bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Уведомления отключены')
     else:
         user_notifications.is_enable = True
+        if user_notifications.period is None:
+            user_notifications.period = 1
+        if user_notifications.ntype is None:
+            user_notifications.ntype = 1
+        user_notifications.hours_remain = user_notifications.period
         await bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Уведомления включены')
     session.commit()
     session.close()
